@@ -77,7 +77,7 @@ send_telegram_error() {
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         -d chat_id="${TG_CHAT_ID}" \
         -d parse_mode=Markdown \
-        -d text="❌ *Kernel CI Build Failed*
+        -d text="❌ *Kernel CI Build Test Failed*
 
 📄 *Log attached below* "
 
@@ -103,7 +103,7 @@ get_toolchain_info
 curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         -d chat_id="${TG_CHAT_ID}" \
         -d parse_mode=Markdown \
-        -d text="🚀 *Kernel CI Build Started* "
+        -d text="🚀 *Kernel CI Build Test Started* "
 
     rm -rf out
     mkdir -p out
@@ -171,20 +171,20 @@ upload_telegram() {
         -F chat_id="${TG_CHAT_ID}" \
         -F document=@"${ZIP_PATH}" \
         -F parse_mode=Markdown \
-        -F caption="🔥 *Kernel CI Build Success*
+        -F caption="🔥 *Kernel CI Build Test Success*
 
-📱 *Device* : ${DEVICE}
-📦 *Kernel Name* : ${KERNEL_NAME}
-🍃 *Kernel Version* : ${KERNEL_VERSION}
+# 📱 *Device* : ${DEVICE}
+# 📦 *Kernel Name* : ${KERNEL_NAME}
+# 🍃 *Kernel Version* : ${KERNEL_VERSION}
 
 🛠 *Toolchain* :
 \`${TC_INFO}\`
 
 ⌛ *Build Time* : ${BUILD_TIME}
-🕒 *Build Date* : ${BUILD_DATETIME}
+# 🕒 *Build Date* : ${BUILD_DATETIME}
 
-🔐 *MD5* :
-\`${MD5_HASH}\`
+# 🔐 *MD5* :
+# \`${MD5_HASH}\`
 
 ❓ *Need Test*"
 
