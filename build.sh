@@ -18,8 +18,8 @@ KIMG="$OUTDIR/Image.gz"
 # ================= TOOLCHAIN (CLANG UBUNTU) =================
 export PATH="$ROOTDIR/clang-zyc/bin:$PATH"
 
-TC64="$ROOTDIR/linegcc49/bin/aarch64-linux-android-"
-TC32="$ROOTDIR/linegcc49/bin/arm-linux-androideabi-"
+TC64="aarch64-linux-android-"
+TC32="arm-linux-androideabi-"
 
 # ================= INFO =================
 KERNEL_NAME="ReLIFE"
