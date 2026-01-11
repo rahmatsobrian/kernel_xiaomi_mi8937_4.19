@@ -114,15 +114,15 @@ curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
 
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
 
-    make -j$(nproc --all) \
+make -j$(nproc --all) \
   O=out \
   ARCH=arm64 \
   CC=clang \
   LD=ld.lld \
   LLVM=1 \
   LLVM_IAS=1 \
-  CROSS_COMPILE=aarch64-linux-android- \
-  CROSS_COMPILE_ARM32=arm-linux-androideabi- || {
+  CROSS_COMPILE=aarch64-linux-gnu- \
+  CROSS_COMPILE_ARM32=arm-linux-gnueabi- || {
         send_telegram_error
         exit 1
     }
