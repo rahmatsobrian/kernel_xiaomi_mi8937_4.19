@@ -20,7 +20,7 @@ jobs:
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 10
+          swap-size-gb: 5
 
       - name: Install Packages
         run: |
@@ -33,49 +33,33 @@ jobs:
             libncurses5-dev bzip2 gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf \
             gcc-arm-linux-gnueabi dos2unix kmod
 
-      - name: Start Build (with log)
+      - name: Setup ZYC Clang
         run: |
-          mkdir -p logs
-          bash build.sh 2>&1 | tee logs/build.txt
+          mkdir clang-zyc
+          cd clang-zyc
 
-      - name: Upload Build Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: logs/build.txt
+           wget -q $(curl -k https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt) -O zyc-clang.tar.gz
+           tar -xf zyc-clang.tar.gz
+           rm -f zyc-clang.tar.gz
+
+      - name: Start Build
+        run: |
+          bash build.sh
 
       - name: Upload AnyKernel Zip
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: anykernel-zip
           path: AnyKernel/*.zip
 
       - name: Upload Kernel Image
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: image-gz
           path: out/arch/arm64/boot/Image.gz
 
       - name: Upload DTB
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: image-gz-dtb
-          path: out/arch/arm64/boot/dtb.img
-          
-      - name: Upload DTB v2
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: image-gz-dtb
           path: out/arch/arm64/boot/Image.gz-dtb
-          
-      - name: Upload DTBO
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: image-gz-dtb
-          path: out/arch/arm64/boot/dtbo.img
