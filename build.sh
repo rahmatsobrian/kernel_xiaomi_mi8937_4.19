@@ -121,14 +121,6 @@ curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         O=out \
         ARCH=arm64 \
         CC=clang \
-        LD=ld.lld \
-        LLVM=1 \
-        LLVM_IAS=1 \
-        AR=llvm-ar \
-        NM=llvm-nm \
-        OBJCOPY=llvm-objcopy \
-        OBJDUMP=llvm-objdump \
-        STRIP=llvm-strip \
         CROSS_COMPILE=${TC64} \
         CROSS_COMPILE_ARM32=${TC32} || {
         send_telegram_error
