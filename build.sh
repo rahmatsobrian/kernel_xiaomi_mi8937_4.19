@@ -173,18 +173,18 @@ upload_telegram() {
         -F parse_mode=Markdown \
         -F caption="🔥 *Kernel CI Build Test Success*
 
-# 📱 *Device* : ${DEVICE}
-# 📦 *Kernel Name* : ${KERNEL_NAME}
-# 🍃 *Kernel Version* : ${KERNEL_VERSION}
+📱 *Device* : ${DEVICE}
+📦 *Kernel Name* : ${KERNEL_NAME}
+🍃 *Kernel Version* : ${KERNEL_VERSION}
 
 🛠 *Toolchain* :
 \`${TC_INFO}\`
 
 ⌛ *Build Time* : ${BUILD_TIME}
-# 🕒 *Build Date* : ${BUILD_DATETIME}
+🕒 *Build Date* : ${BUILD_DATETIME}
 
-# 🔐 *MD5* :
-# \`${MD5_HASH}\`
+🔐 *MD5* :
+\`${MD5_HASH}\`
 
 ❓ *Need Test*"
 
