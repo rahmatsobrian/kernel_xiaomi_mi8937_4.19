@@ -53,7 +53,13 @@ clone_anykernel() {
 
 get_toolchain_info() {
     if command -v clang >/dev/null 2>&1; then
-        TC_INFO="Clang 18.1.3"
+        if clang --version | grep -qi "zyc\|zycromerz"; then
+            CLANG_VER=$(clang --version | head -n1 | sed 's/.*version //')
+            TC_INFO="ZYC Clang ${CLANG_VER}"
+        else
+            CLANG_VER=$(clang --version | head -n1)
+            TC_INFO="Clang (${CLANG_VER})"
+        fi
     else
         TC_INFO="unknown"
     fi
