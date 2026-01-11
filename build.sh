@@ -107,7 +107,7 @@ curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
 
     rm -rf out
     mkdir -p out
-make O=out ARCH=arm64 ${DEFCONFIG} olddefconfig || {
+make O=out ARCH=arm64 ${DEFCONFIG} || {
     send_telegram_error
     exit 1
 }
