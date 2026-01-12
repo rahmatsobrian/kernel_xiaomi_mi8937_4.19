@@ -134,7 +134,6 @@ KCONFIG_CONFIG=out/.config \
 scripts/kconfig/merge_config.sh -m -O out \
     out/.config \
     arch/arm64/configs/vendor/common.config \
-    arch/arm64/configs/vendor/feature/lto.config \
     arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config || {
         echo -e "$red[✗] Failed merge config$white"
         send_telegram_error
