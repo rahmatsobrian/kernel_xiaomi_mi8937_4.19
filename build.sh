@@ -118,61 +118,68 @@ get_toolchain_info
 # ================= CONFIG =================
 echo -e "$yellow[+] Preparing kernel config...$white"
 
-{
-    # 1️⃣ Copy base defconfig
-    echo -e "$yellow[+] Copy base defconfig...$white"
-    cp arch/arm64/configs/$DEFCONFIG .config || {
-        echo -e "$red[✗] Base defconfig missing!$white"
-        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" \
-            -d parse_mode=Markdown \
-            -d text="⚠️ Base defconfig *${DEFCONFIG}* not found!"
-        exit 1
-    }
+CONFIG_OK=true
 
-    # 2️⃣ Append common config
-    COMMON_FILE="arch/arm64/configs/vendor/common.config"
-    if [ -f "$COMMON_FILE" ]; then
-        echo -e "$yellow[+] Append common config...$white"
-        cat "$COMMON_FILE" >> .config
-    else
-        echo -e "$red[✗] Common config missing!$white"
-        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" \
-            -d parse_mode=Markdown \
-            -d text="⚠️ Common config *common.config* not found, skipping..."
-    fi
+# 1️⃣ Base defconfig
+if ! cp "arch/arm64/configs/$DEFCONFIG" .config; then
+    echo -e "$red[✗] Base defconfig missing!$white"
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TG_CHAT_ID}" \
+        -d parse_mode=Markdown \
+        -d text="⚠️ Base defconfig *${DEFCONFIG}* not found!"
+    exit 1
+fi
 
-    # 3️⃣ Append feature config
-    LTO_FILE="arch/arm64/configs/vendor/feature/lto.config"
-    if [ -f "$LTO_FILE" ]; then
-        echo -e "$yellow[+] Append feature config...$white"
-        cat "$LTO_FILE" >> .config
-    else
-        echo -e "$red[✗] Feature config missing!$white"
-        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" \
-            -d parse_mode=Markdown \
-            -d text="⚠️ Feature config *lto.config* not found, skipping..."
-    fi
+# 2️⃣ Append common
+COMMON_FILE="arch/arm64/configs/vendor/common.config"
+if [ -f "$COMMON_FILE" ]; then
+    cat "$COMMON_FILE" >> .config
+else
+    CONFIG_OK=false
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TG_CHAT_ID}" \
+        -d parse_mode=Markdown \
+        -d text="⚠️ Common config *common.config* not found, skipping..."
+fi
 
-    # 4️⃣ Append device config
-    DEVICE_FILE="arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config"
-    if [ -f "$DEVICE_FILE" ]; then
-        echo -e "$yellow[+] Append device config...$white"
-        cat "$DEVICE_FILE" >> .config
-    else
-        echo -e "$red[✗] Device config missing!$white"
-        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TG_CHAT_ID}" \
-            -d parse_mode=Markdown \
-            -d text="⚠️ Device config *mi8917.config* not found, skipping..."
-    fi
-} || {
-    echo -e "$red[✗] Failed preparing config$white"
+# 3️⃣ Append feature
+LTO_FILE="arch/arm64/configs/vendor/feature/lto.config"
+if [ -f "$LTO_FILE" ]; then
+    cat "$LTO_FILE" >> .config
+else
+    CONFIG_OK=false
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TG_CHAT_ID}" \
+        -d parse_mode=Markdown \
+        -d text="⚠️ Feature config *lto.config* not found, skipping..."
+fi
+
+# 4️⃣ Append device
+DEVICE_FILE="arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config"
+if [ -f "$DEVICE_FILE" ]; then
+    cat "$DEVICE_FILE" >> .config
+else
+    CONFIG_OK=false
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TG_CHAT_ID}" \
+        -d parse_mode=Markdown \
+        -d text="⚠️ Device config *mi8917.config* not found, skipping..."
+fi
+
+# 5️⃣ Sync config dengan make oldconfig
+if ! make O=out ARCH=arm64 oldconfig; then
+    echo -e "$red[✗] Failed sync config with oldconfig!$white"
     send_telegram_error
     exit 1
-}
+fi
+
+# Kirim notifikasi jika ada file yang hilang
+if [ "$CONFIG_OK" = false ]; then
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TG_CHAT_ID}" \
+        -d parse_mode=Markdown \
+        -d text="⚠️ Build continued, tapi ada config yang hilang. Cek log."
+fi
 
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
 
