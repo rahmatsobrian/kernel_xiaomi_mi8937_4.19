@@ -125,7 +125,7 @@ cp arch/arm64/configs/$DEFCONFIG .config
 
 # 2️⃣ Append common config
 echo -e "$yellow[+] Append common config...$white"
-cat arch/arm64/configs/vendor/feature/common.config >> .config
+cat arch/arm64/configs/vendor/common.config >> .config
 
 # 3️⃣ Append feature config (LTO, Shadow Call Stack, dll)
 echo -e "$yellow[+] Append feature config...$white"
