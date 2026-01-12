@@ -129,15 +129,13 @@ make O=out ARCH=arm64 "$DEFCONFIG" || {
     exit 1
 }
 
-# 2️⃣ Merge config fragments (FIXED: write ONLY to out/.config)
+# 2️⃣ Merge config fragments (BENAR)
 KCONFIG_CONFIG=out/.config \
 scripts/kconfig/merge_config.sh -m -O out \
-    out/.config \
     arch/arm64/configs/vendor/common.config \
     arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config || {
         echo -e "$red[✗] Failed merge config$white"
         send_telegram_error
-        send_telegram_log
         exit 1
 }
 
