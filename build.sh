@@ -17,7 +17,7 @@ KIMG="$OUTDIR/Image.gz"
 # ================= Config Path =================
 MI8937=arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config
 LTO=arch/arm64/configs/vendor/feature/lto.config
-RELR=arch/arm64/configs/vendor/feature/lelr.config
+RELR=arch/arm64/configs/vendor/feature/relr.config
 VDSO=arch/arm64/configs/vendor/feature/vdso.config
 
 # ========== Merge ==========
@@ -115,6 +115,9 @@ send_telegram_start
 
 get_toolchain_info
 
+    echo -e "$yellow[+] Cleaning kernel tree...$white"
+make mrproper || { send_telegram_error; exit 1; }
+
     echo -e "$yellow[+] Building kernel...$white"
     
     echo -e "$yellow[+] Removing out folder...$white"
@@ -139,6 +142,8 @@ $MERGE -m out/.config \
     send_telegram_error
     exit 1
 }
+
+# yes "" | make O=out ARCH=arm64 olddefconfig
 
 make O=out ARCH=arm64 olddefconfig || {
     send_telegram_error
