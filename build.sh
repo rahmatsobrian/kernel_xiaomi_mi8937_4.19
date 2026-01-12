@@ -117,22 +117,22 @@ send_telegram_start
 echo -e "$yellow[+] Getting toolchain info...$white"
 get_toolchain_info
 
-la
+ls -a
 
     echo -e "$yellow[+] Cleaning kernel tree...$white"
 make mrproper || { send_telegram_error; exit 1; }
 
-la
+ls -a
     
     echo -e "$yellow[+] Removing out folder...$white"
     rm -rf out
     
-la
+ls -a
     
     echo -e "$yellow[+] Creating out folder...$white"
     mkdir -p out
    
-la
+ls -a
 
 # Setting config
 echo -e "$yellow[+] Preparing kernel config...$white"
@@ -141,7 +141,7 @@ make O=out ARCH=arm64 ${DEFCONFIG} || {
     exit 1
 }
 
-la
+ls -a
 
 echo -e "$yellow[+] Merge kernel config...$white"
 $MERGE -m out/.config \
@@ -153,7 +153,7 @@ $MERGE -m out/.config \
     exit 1
 }
 
-la
+ls -a
 
 echo -e "$yellow[+] Build olddefconfig...$white"
 # yes "" | make O=out ARCH=arm64 olddefconfig
@@ -162,7 +162,7 @@ make O=out ARCH=arm64 olddefconfig || {
     exit 1
 }
 
-la
+ls -a
 
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
 
@@ -190,7 +190,7 @@ echo -e "$yellow[+] Getting kernel version...$white"
     ZIP_NAME="${KERNEL_NAME}-${DEVICE}-${KERNEL_VERSION}-${DATE_TITLE}-${TIME_TITLE}.zip"
 }
 
-la
+ls -a
 
 # =============== Zipping Kernel ===============
 pack_kernel() {
