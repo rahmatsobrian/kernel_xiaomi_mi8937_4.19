@@ -113,12 +113,13 @@ get_toolchain_info
     rm -rf out
     
     echo -e "$yellow[+] Creating out folder...$white"
-    mkdir out
+    mkdir -p out
     
 # ================= CONFIG =================
 echo -e "$yellow[+] Preparing kernel config...$white"
 
-{ # 1️⃣ Copy base defconfig
+{
+ # 1️⃣ Copy base defconfig
 echo -e "$yellow[+] Copy base defconfig...$white"
 cp arch/arm64/configs/$DEFCONFIG .config
 
@@ -132,7 +133,8 @@ cat arch/arm64/configs/vendor/feature/lto.config >> .config
 
 # 4️⃣ Append device config
 echo -e "$yellow[+] Append device config...$white"
-cat arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config >> .config } || {
+cat arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config >> .config 
+} || {
     echo -e "$red[✗] Failed preparing config$white"
     send_telegram_error
     exit 1
