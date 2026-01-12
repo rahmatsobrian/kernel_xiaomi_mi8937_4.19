@@ -144,10 +144,10 @@ ls -a
 
 echo -e "$yellow[+] Merge kernel config...$white"
 $MERGE -m out/.config \
-    arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config \
-    arch/arm64/configs/vendor/feature/lto.config \
-    arch/arm64/configs/vendor/feature/relr.config \
-    arch/arm64/configs/vendor/feature/vdso.config || {
+    arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config || {
+# arch/arm64/configs/vendor/feature/lto.config \
+# arch/arm64/configs/vendor/feature/relr.config \
+# arch/arm64/configs/vendor/feature/vdso.config
     send_telegram_error
     exit 1
 }
