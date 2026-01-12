@@ -113,7 +113,7 @@ get_toolchain_info
     rm -rf out
     
     echo -e "$yellow[+] Creating out folder...$white"
-    mkdir -p out
+    mkdir out
     
 # ================= CONFIG =================
 echo -e "$yellow[+] Preparing kernel config...$white"
