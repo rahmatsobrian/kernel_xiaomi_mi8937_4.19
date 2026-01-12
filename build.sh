@@ -118,6 +118,9 @@ get_toolchain_info
 # ================= CONFIG =================
 echo -e "$yellow[+] Preparing kernel config...$white"
 
+# Clean out dir (optional tapi disarankan)
+# Sudah ada diatas
+
 # 1️⃣ Generate base defconfig
 make O=out ARCH=arm64 "$DEFCONFIG" || {
     echo -e "$red[✗] Failed to load defconfig$white"
@@ -126,24 +129,26 @@ make O=out ARCH=arm64 "$DEFCONFIG" || {
     exit 1
 }
 
-# 2️⃣ Merge config fragments
-scripts/kconfig/merge_config.sh -m \
+# 2️⃣ Merge config fragments (FIXED: write ONLY to out/.config)
+KCONFIG_CONFIG=out/.config \
+scripts/kconfig/merge_config.sh -m -O out \
     out/.config \
     arch/arm64/configs/vendor/common.config \
     arch/arm64/configs/vendor/feature/lto.config \
     arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config || {
         echo -e "$red[✗] Failed merge config$white"
         send_telegram_error
-    send_telegram_log
+        send_telegram_log
         exit 1
 }
 
-# 3️⃣ Finalize config (NO PROMPT)
-make O=out ARCH=arm64 olddefconfig </dev/null || {
-    echo -e "$red[✗] olddefconfig failed$white"
-    send_telegram_error
-    send_telegram_log
-    exit 1
+# 3️⃣ Finalize config (NO PROMPT, EVER)
+make O=out ARCH=arm64 olddefconfig \
+    KCONFIG_CONFIG=out/.config </dev/null || {
+        echo -e "$red[✗] olddefconfig failed$white"
+        send_telegram_error
+        send_telegram_log
+        exit 1
 }
 
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
