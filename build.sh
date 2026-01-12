@@ -11,18 +11,23 @@ DEFCONFIG=vendor/msm8937-perf_defconfig
 ROOTDIR=$(pwd)
 OUTDIR="$ROOTDIR/out/arch/arm64/boot"
 ANYKERNEL_DIR="$ROOTDIR/AnyKernel"
-
 KIMG_DTB="$OUTDIR/Image.gz-dtb"
 KIMG="$OUTDIR/Image.gz"
 
-# ================= TOOLCHAIN (CLANG) =================
+# ================= Config Path =================
+MI8937=vendor/xiaomi/msm8937/mi8937.config
+LTO=vendor/feature/lto.config
+RELR=vendor/feature/lelr.config
+VDSO=vendor/feature/vdso.config
+
+# ========== TOOLCHAIN (CLANG) ===========
 export PATH="$ROOTDIR/clang-zyc/bin:$PATH"
 
 # ================= INFO =================
 KERNEL_NAME="ReLIFE"
 DEVICE="Mi8937"
 
-# ================= DATE (WIB) =================
+# =============== DATE (WIB) ===============
 DATE_TITLE=$(TZ=Asia/Jakarta date +"%d%m%Y")
 TIME_TITLE=$(TZ=Asia/Jakarta date +"%H%M%S")
 BUILD_DATETIME=$(TZ=Asia/Jakarta date +"%d %B %Y")
@@ -40,7 +45,6 @@ MD5_HASH="unknown"
 ZIP_NAME=""
 
 # ================= FUNCTION =================
-
 clone_anykernel() {
     if [ ! -d "$ANYKERNEL_DIR" ]; then
         echo -e "$yellow[+] Cloning AnyKernel3...$white"
@@ -101,6 +105,7 @@ send_telegram_log() {
         -F document=@"${LOG_FILE}" 
 }
 
+# ================= Build Kernel =================
 build_kernel() {
 
 send_telegram_start
@@ -114,14 +119,10 @@ get_toolchain_info
     
     echo -e "$yellow[+] Creating out folder...$white"
     mkdir -p out
-    
-# ================= CONFIG =================
+   
 echo -e "$yellow[+] Preparing kernel config...$white"
 
-# Clean out dir (optional tapi disarankan)
-# Sudah ada diatas
-
-make O=out ARCH=arm64 ${DEFCONFIG} || {
+make O=out ARCH=arm64 ${DEFCONFIG} ${MI8937} ${LTO} ${RELR} ${VDSO} || {
     send_telegram_error
     exit 1
 }
@@ -150,6 +151,7 @@ make -j$(nproc --all) \
     ZIP_NAME="${KERNEL_NAME}-${DEVICE}-${KERNEL_VERSION}-${DATE_TITLE}-${TIME_TITLE}.zip"
 }
 
+# =============== Zipping Kernel ===============
 pack_kernel() {
     echo -e "$yellow[+] Packing AnyKernel...$white"
 
@@ -175,6 +177,7 @@ pack_kernel() {
     echo -e "$green[✓] Zip created: $ZIP_NAME ($IMG_USED)$white"
 }
 
+# ============= Upload To Telegram =============
 upload_telegram() {
     ZIP_PATH="$ANYKERNEL_DIR/$ZIP_NAME"
     [ ! -f "$ZIP_PATH" ] && return
