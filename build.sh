@@ -111,29 +111,39 @@ send_telegram_log() {
 # ================= Build Kernel =================
 build_kernel() {
 
+echo -e "$yellow[+] Sending telegram start...$white"
 send_telegram_start
 
+echo -e "$yellow[+] Getting toolchain info...$white"
 get_toolchain_info
+
+la
 
     echo -e "$yellow[+] Cleaning kernel tree...$white"
 make mrproper || { send_telegram_error; exit 1; }
 
-    echo -e "$yellow[+] Building kernel...$white"
+la
     
     echo -e "$yellow[+] Removing out folder...$white"
     rm -rf out
     
+la
+    
     echo -e "$yellow[+] Creating out folder...$white"
     mkdir -p out
    
-echo -e "$yellow[+] Preparing kernel config...$white"
+la
 
 # Setting config
+echo -e "$yellow[+] Preparing kernel config...$white"
 make O=out ARCH=arm64 ${DEFCONFIG} || {
     send_telegram_error
     exit 1
 }
 
+la
+
+echo -e "$yellow[+] Merge kernel config...$white"
 $MERGE -m out/.config \
     arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config \
     arch/arm64/configs/vendor/feature/lto.config \
@@ -143,15 +153,20 @@ $MERGE -m out/.config \
     exit 1
 }
 
-# yes "" | make O=out ARCH=arm64 olddefconfig
+la
 
+echo -e "$yellow[+] Build olddefconfig...$white"
+# yes "" | make O=out ARCH=arm64 olddefconfig
 make O=out ARCH=arm64 olddefconfig || {
     send_telegram_error
     exit 1
 }
 
+la
+
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
 
+echo -e "$yellow[+] Building Kernel...$white"
 make -j$(nproc --all) \
   O=out \
   ARCH=arm64 \
@@ -169,15 +184,19 @@ make -j$(nproc --all) \
     DIFF=$((BUILD_END - BUILD_START))
     BUILD_TIME="$((DIFF / 60)) min $((DIFF % 60)) sec"
 
+echo -e "$yellow[+] Getting kernel version...$white"
     get_kernel_version
 
     ZIP_NAME="${KERNEL_NAME}-${DEVICE}-${KERNEL_VERSION}-${DATE_TITLE}-${TIME_TITLE}.zip"
 }
 
+la
+
 # =============== Zipping Kernel ===============
 pack_kernel() {
     echo -e "$yellow[+] Packing AnyKernel...$white"
 
+echo -e "$yellow[+] Cloning AnyKernel...$white"
     clone_anykernel
     cd "$ANYKERNEL_DIR" || exit 1
 
@@ -194,6 +213,7 @@ pack_kernel() {
         exit 1
     fi
 
+echo -e "$yellow[+] Zipping kernel...$white"
     zip -r9 "$ZIP_NAME" . -x ".git*" "README.md"
     MD5_HASH=$(md5sum "$ZIP_NAME" | awk '{print $1}')
 
