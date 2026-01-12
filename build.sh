@@ -165,7 +165,10 @@ make O=out ARCH=arm64 olddefconfig || {
 echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
-    BUILD_START=$(TZ=Asia/Jakarta date +%s)
+BUILD_START=$(TZ=Asia/Jakarta date +%s)
+
+echo "[+] Copy .config to out folder..."
+cp .config out/.config
 
 echo "[+] Cleaning root tree..."
 rm -rf .config
