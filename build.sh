@@ -42,172 +42,84 @@ ZIP_NAME=""
 # ================= FUNCTION =================
 
 clone_anykernel() {
-    if [ ! -d "$ANYKERNEL_DIR" ]; then
-        echo -e "$yellow[+] Cloning AnyKernel3...$white"
-        git clone https://github.com/rahmatsobrian/AnyKernel3.git "$ANYKERNEL_DIR" || exit 1
-    fi
+    [ -d "$ANYKERNEL_DIR" ] || git clone https://github.com/rahmatsobrian/AnyKernel3.git "$ANYKERNEL_DIR"
 }
 
 get_toolchain_info() {
     if command -v clang >/dev/null 2>&1; then
-        if clang --version | grep -qi "zyc\|zycromerz"; then
-            CLANG_VER=$(clang --version | head -n1 | sed 's/.*version //')
-            TC_INFO="ZYC Clang ${CLANG_VER}"
-        else
-            CLANG_VER=$(clang --version | head -n1)
-            TC_INFO="Clang (${CLANG_VER})"
-        fi
-    else
-        TC_INFO="unknown"
+        CLANG_VER=$(clang --version | head -n1)
+        TC_INFO="$CLANG_VER"
     fi
 }
 
 get_kernel_version() {
-    if [ -f "Makefile" ]; then
-        VERSION=$(grep -E '^VERSION =' Makefile | awk '{print $3}')
-        PATCHLEVEL=$(grep -E '^PATCHLEVEL =' Makefile | awk '{print $3}')
-        SUBLEVEL=$(grep -E '^SUBLEVEL =' Makefile | awk '{print $3}')
-        KERNEL_VERSION="${VERSION}.${PATCHLEVEL}.${SUBLEVEL}"
-    else
-        KERNEL_VERSION="unknown"
-    fi
+    VERSION=$(grep -E '^VERSION =' Makefile | awk '{print $3}')
+    PATCHLEVEL=$(grep -E '^PATCHLEVEL =' Makefile | awk '{print $3}')
+    SUBLEVEL=$(grep -E '^SUBLEVEL =' Makefile | awk '{print $3}')
+    KERNEL_VERSION="${VERSION}.${PATCHLEVEL}.${SUBLEVEL}"
 }
 
 send_telegram_error() {
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         -d chat_id="${TG_CHAT_ID}" \
         -d parse_mode=Markdown \
-        -d text="❌ *Kernel CI Build Test Failed*
-
-📄 *Log attached below* "
-
-    send_telegram_log
+        -d text="❌ *Kernel CI Build Failed*"
+    exit 1
 }
 
 send_telegram_start() {
-curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         -d chat_id="${TG_CHAT_ID}" \
         -d parse_mode=Markdown \
-        -d text="🚀 *Kernel CI Build Test Started* "
+        -d text="🚀 *Kernel CI Build Started*"
 }
 
-send_telegram_log() {
-    LOG_FILE="$ROOTDIR/logs/build.txt"
-
-    [ ! -f "$LOG_FILE" ] && return
-
-    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
-        -F chat_id="${TG_CHAT_ID}" \
-        -F document=@"${LOG_FILE}" 
-}
+# ================= BUILD =================
 
 build_kernel() {
+    send_telegram_start
+    get_toolchain_info
 
-send_telegram_start
+    echo -e "$yellow[+] Preparing build environment...$white"
+    rm -rf out && mkdir -p out
 
-get_toolchain_info
+    echo -e "$yellow[+] Loading defconfig...$white"
+    make O=out ARCH=arm64 ${DEFCONFIG} || send_telegram_error
 
-    echo -e "$yellow[+] Building kernel...$white"
-    
-    echo -e "$yellow[+] Removing out folder...$white"
-    rm -rf out
-    
-    echo -e "$yellow[+] Creating out folder...$white"
-    mkdir -p out
-    
-# ================= CONFIG =================
-echo -e "$yellow[+] Preparing kernel config...$white"
+    echo -e "$yellow[+] Merging config fragments...$white"
+    scripts/kconfig/merge_config.sh -m \
+        out/.config \
+        arch/arm64/configs/vendor/common.config \
+        arch/arm64/configs/vendor/feature/lto.config \
+        arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config || send_telegram_error
 
-CONFIG_OK=true
-
-# 1️⃣ Base defconfig
-if ! cp "arch/arm64/configs/$DEFCONFIG" .config; then
-    echo -e "$red[✗] Base defconfig missing!$white"
-    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TG_CHAT_ID}" \
-        -d parse_mode=Markdown \
-        -d text="⚠️ Base defconfig *${DEFCONFIG}* not found!"
-    exit 1
-fi
-
-# 2️⃣ Append common
-COMMON_FILE="arch/arm64/configs/vendor/common.config"
-if [ -f "$COMMON_FILE" ]; then
-    cat "$COMMON_FILE" >> .config
-else
-    CONFIG_OK=false
-    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TG_CHAT_ID}" \
-        -d parse_mode=Markdown \
-        -d text="⚠️ Common config *common.config* not found, skipping..."
-fi
-
-# 3️⃣ Append feature
-LTO_FILE="arch/arm64/configs/vendor/feature/lto.config"
-if [ -f "$LTO_FILE" ]; then
-    cat "$LTO_FILE" >> .config
-else
-    CONFIG_OK=false
-    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TG_CHAT_ID}" \
-        -d parse_mode=Markdown \
-        -d text="⚠️ Feature config *lto.config* not found, skipping..."
-fi
-
-# 4️⃣ Append device
-DEVICE_FILE="arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config"
-if [ -f "$DEVICE_FILE" ]; then
-    cat "$DEVICE_FILE" >> .config
-else
-    CONFIG_OK=false
-    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TG_CHAT_ID}" \
-        -d parse_mode=Markdown \
-        -d text="⚠️ Device config *mi8917.config* not found, skipping..."
-fi
-
-# 5️⃣ Sync config dengan make oldconfig
-if ! make O=out ARCH=arm64 oldconfig; then
-    echo -e "$red[✗] Failed sync config with oldconfig!$white"
-    send_telegram_error
-    exit 1
-fi
-
-# Kirim notifikasi jika ada file yang hilang
-if [ "$CONFIG_OK" = false ]; then
-    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TG_CHAT_ID}" \
-        -d parse_mode=Markdown \
-        -d text="⚠️ Build continued, tapi ada config yang hilang. Cek log."
-fi
+    echo -e "$yellow[+] Finalizing config (olddefconfig)...$white"
+    make O=out ARCH=arm64 olddefconfig </dev/null || send_telegram_error
 
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
 
-make -j$(nproc --all) \
-  O=out \
-  ARCH=arm64 \
-  CC=clang \
-  LD=ld.lld \
-  LLVM=1 \
-  LLVM_IAS=1 \
-  CROSS_COMPILE=aarch64-linux-gnu- \
-  CROSS_COMPILE_ARM32=arm-linux-gnueabi- || {
-        send_telegram_error
-        exit 1
-    }
+    echo -e "$yellow[+] Compiling kernel...$white"
+    make -j$(nproc --all) \
+        O=out \
+        ARCH=arm64 \
+        CC=clang \
+        LD=ld.lld \
+        LLVM=1 \
+        LLVM_IAS=1 \
+        CROSS_COMPILE=aarch64-linux-gnu- \
+        CROSS_COMPILE_ARM32=arm-linux-gnueabi- || send_telegram_error
 
     BUILD_END=$(TZ=Asia/Jakarta date +%s)
     DIFF=$((BUILD_END - BUILD_START))
     BUILD_TIME="$((DIFF / 60)) min $((DIFF % 60)) sec"
 
     get_kernel_version
-
     ZIP_NAME="${KERNEL_NAME}-${DEVICE}-${KERNEL_VERSION}-${DATE_TITLE}-${TIME_TITLE}.zip"
 }
 
-pack_kernel() {
-    echo -e "$yellow[+] Packing AnyKernel...$white"
+# ================= PACK =================
 
+pack_kernel() {
     clone_anykernel
     cd "$ANYKERNEL_DIR" || exit 1
 
@@ -216,56 +128,34 @@ pack_kernel() {
     if [ -f "$KIMG_DTB" ]; then
         cp "$KIMG_DTB" Image.gz-dtb
         IMG_USED="Image.gz-dtb"
-    elif [ -f "$KIMG" ]; then
+    else
         cp "$KIMG" Image.gz
         IMG_USED="Image.gz"
-    else
-        send_telegram_error
-        exit 1
     fi
 
-    zip -r9 "$ZIP_NAME" . -x ".git*" "README.md"
+    zip -r9 "$ZIP_NAME" .
     MD5_HASH=$(md5sum "$ZIP_NAME" | awk '{print $1}')
-
-    echo -e "$green[✓] Zip created: $ZIP_NAME ($IMG_USED)$white"
 }
 
+# ================= UPLOAD =================
+
 upload_telegram() {
-    ZIP_PATH="$ANYKERNEL_DIR/$ZIP_NAME"
-    [ ! -f "$ZIP_PATH" ] && return
-
-    echo -e "$yellow[+] Uploading to Telegram...$white"
-
     curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
         -F chat_id="${TG_CHAT_ID}" \
-        -F document=@"${ZIP_PATH}" \
-        -F parse_mode=Markdown \
-        -F caption="🔥 *Kernel CI Build Test Success*
-
-📱 *Device* : ${DEVICE}
-📦 *Kernel Name* : ${KERNEL_NAME}
-🍃 *Kernel Version* : ${KERNEL_VERSION}
-
-🛠 *Toolchain* :
-\`${TC_INFO}\`
-
-⌛ *Build Time* : ${BUILD_TIME}
-🕒 *Build Date* : ${BUILD_DATETIME}
-
-🔐 *MD5* :
-\`${MD5_HASH}\`
-
-❓ *Need Test*"
-
-send_telegram_log
+        -F document=@"$ANYKERNEL_DIR/$ZIP_NAME" \
+        -F caption="✅ *Build Success*
+Kernel: ${KERNEL_NAME}
+Device: ${DEVICE}
+Version: ${KERNEL_VERSION}
+Time: ${BUILD_TIME}"
 }
 
 # ================= RUN =================
-START=$(TZ=Asia/Jakarta date +%s)
 
+START=$(date +%s)
 build_kernel
 pack_kernel
 upload_telegram
+END=$(date +%s)
 
-END=$(TZ=Asia/Jakarta date +%s)
 echo -e "$green[✓] Done in $((END - START)) seconds$white"
