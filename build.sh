@@ -119,21 +119,55 @@ get_toolchain_info
 echo -e "$yellow[+] Preparing kernel config...$white"
 
 {
- # 1️⃣ Copy base defconfig
-echo -e "$yellow[+] Copy base defconfig...$white"
-cp arch/arm64/configs/$DEFCONFIG .config
+    # 1️⃣ Copy base defconfig
+    echo -e "$yellow[+] Copy base defconfig...$white"
+    cp arch/arm64/configs/$DEFCONFIG .config || {
+        echo -e "$red[✗] Base defconfig missing!$white"
+        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d parse_mode=Markdown \
+            -d text="⚠️ Base defconfig *${DEFCONFIG}* not found!"
+        exit 1
+    }
 
-# 2️⃣ Append common config
-echo -e "$yellow[+] Append common config...$white"
-cat arch/arm64/configs/vendor/common.config >> .config
+    # 2️⃣ Append common config
+    COMMON_FILE="arch/arm64/configs/vendor/common.config"
+    if [ -f "$COMMON_FILE" ]; then
+        echo -e "$yellow[+] Append common config...$white"
+        cat "$COMMON_FILE" >> .config
+    else
+        echo -e "$red[✗] Common config missing!$white"
+        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d parse_mode=Markdown \
+            -d text="⚠️ Common config *common.config* not found, skipping..."
+    fi
 
-# 3️⃣ Append feature config (LTO, Shadow Call Stack, dll)
-echo -e "$yellow[+] Append feature config...$white"
-cat arch/arm64/configs/vendor/feature/lto.config >> .config
+    # 3️⃣ Append feature config
+    LTO_FILE="arch/arm64/configs/vendor/feature/lto.config"
+    if [ -f "$LTO_FILE" ]; then
+        echo -e "$yellow[+] Append feature config...$white"
+        cat "$LTO_FILE" >> .config
+    else
+        echo -e "$red[✗] Feature config missing!$white"
+        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d parse_mode=Markdown \
+            -d text="⚠️ Feature config *lto.config* not found, skipping..."
+    fi
 
-# 4️⃣ Append device config
-echo -e "$yellow[+] Append device config...$white"
-cat arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config >> .config 
+    # 4️⃣ Append device config
+    DEVICE_FILE="arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config"
+    if [ -f "$DEVICE_FILE" ]; then
+        echo -e "$yellow[+] Append device config...$white"
+        cat "$DEVICE_FILE" >> .config
+    else
+        echo -e "$red[✗] Device config missing!$white"
+        curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TG_CHAT_ID}" \
+            -d parse_mode=Markdown \
+            -d text="⚠️ Device config *mi8917.config* not found, skipping..."
+    fi
 } || {
     echo -e "$red[✗] Failed preparing config$white"
     send_telegram_error
