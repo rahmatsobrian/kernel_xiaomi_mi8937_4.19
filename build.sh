@@ -117,21 +117,19 @@ send_telegram_start
 echo -e "$yellow[+] Getting toolchain info...$white"
 get_toolchain_info
 
-ls -a
-
-    echo -e "$yellow[+] Cleaning kernel tree...$white"
-make mrproper || { send_telegram_error; exit 1; }
-
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
     
     echo -e "$yellow[+] Removing out folder...$white"
     rm -rf out
     
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
     
     echo -e "$yellow[+] Creating out folder...$white"
     mkdir -p out
    
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
 # Setting config
@@ -141,6 +139,7 @@ make O=out ARCH=arm64 ${DEFCONFIG} || {
     exit 1
 }
 
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
 echo -e "$yellow[+] Merge kernel config...$white"
@@ -153,6 +152,7 @@ $MERGE -m out/.config \
     exit 1
 }
 
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
 echo -e "$yellow[+] Build olddefconfig...$white"
@@ -162,9 +162,20 @@ make O=out ARCH=arm64 olddefconfig || {
     exit 1
 }
 
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
     BUILD_START=$(TZ=Asia/Jakarta date +%s)
+
+echo "[+] Cleaning root tree..."
+rm -rf .config
+make mrproper
+
+echo -e "$yellow[+] Check root directory after delete .config...$white"
+ls -a
+
+echo -e "$yellow[+] Check out directory before build...$white"
+ls -a out
 
 echo -e "$yellow[+] Building Kernel...$white"
 make -j$(nproc --all) \
@@ -190,6 +201,7 @@ echo -e "$yellow[+] Getting kernel version...$white"
     ZIP_NAME="${KERNEL_NAME}-${DEVICE}-${KERNEL_VERSION}-${DATE_TITLE}-${TIME_TITLE}.zip"
 }
 
+echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
 # =============== Zipping Kernel ===============
