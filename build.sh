@@ -84,6 +84,13 @@ send_telegram_error() {
     send_telegram_log
 }
 
+send_telegram_start() {
+curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+        -d chat_id="${TG_CHAT_ID}" \
+        -d parse_mode=Markdown \
+        -d text="🚀 *Kernel CI Build Test Started* "
+}
+
 send_telegram_log() {
     LOG_FILE="$ROOTDIR/logs/build.txt"
 
@@ -96,18 +103,37 @@ send_telegram_log() {
 
 build_kernel() {
 
+send_telegram_start
+
 get_toolchain_info
 
     echo -e "$yellow[+] Building kernel...$white"
-
-curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
-        -d chat_id="${TG_CHAT_ID}" \
-        -d parse_mode=Markdown \
-        -d text="🚀 *Kernel CI Build Test Started* "
-
+    
+    echo -e "$yellow[+] Removing out folder...$white"
     rm -rf out
+    
+    echo -e "$yellow[+] Creating out folder...$white"
     mkdir -p out
-make O=out ARCH=arm64 ${DEFCONFIG} || {
+    
+# ================= CONFIG =================
+echo -e "$yellow[+] Preparing kernel config...$white"
+
+{ # 1️⃣ Copy base defconfig
+echo -e "$yellow[+] Copy base defconfig...$white"
+cp arch/arm64/configs/$DEFCONFIG .config
+
+# 2️⃣ Append common config
+echo -e "$yellow[+] Append common config...$white"
+cat arch/arm64/configs/vendor/feature/common.config >> .config
+
+# 3️⃣ Append feature config (LTO, Shadow Call Stack, dll)
+echo -e "$yellow[+] Append feature config...$white"
+cat arch/arm64/configs/vendor/feature/lto.config >> .config
+
+# 4️⃣ Append device config
+echo -e "$yellow[+] Append device config...$white"
+cat arch/arm64/configs/vendor/xiaomi/msm8937/mi8917.config >> .config } || {
+    echo -e "$red[✗] Failed preparing config$white"
     send_telegram_error
     exit 1
 }
