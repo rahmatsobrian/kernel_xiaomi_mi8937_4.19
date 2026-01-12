@@ -15,10 +15,13 @@ KIMG_DTB="$OUTDIR/Image.gz-dtb"
 KIMG="$OUTDIR/Image.gz"
 
 # ================= Config Path =================
-MI8937=vendor/xiaomi/msm8937/mi8937.config
-LTO=vendor/feature/lto.config
-RELR=vendor/feature/lelr.config
-VDSO=vendor/feature/vdso.config
+MI8937=arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config
+LTO=arch/arm64/configs/vendor/feature/lto.config
+RELR=arch/arm64/configs/vendor/feature/lelr.config
+VDSO=arch/arm64/configs/vendor/feature/vdso.config
+
+# ========== Merge ==========
+MERGE="$ROOTDIR/scripts/kconfig/merge_config.sh"
 
 # ========== TOOLCHAIN (CLANG) ===========
 export PATH="$ROOTDIR/clang-zyc/bin:$PATH"
@@ -122,7 +125,22 @@ get_toolchain_info
    
 echo -e "$yellow[+] Preparing kernel config...$white"
 
-make O=out ARCH=arm64 ${DEFCONFIG} ${MI8937} ${LTO} ${RELR} ${VDSO} || {
+# Setting config
+make O=out ARCH=arm64 ${DEFCONFIG} || {
+    send_telegram_error
+    exit 1
+}
+
+$MERGE -m out/.config \
+    arch/arm64/configs/vendor/xiaomi/msm8937/mi8937.config \
+    arch/arm64/configs/vendor/feature/lto.config \
+    arch/arm64/configs/vendor/feature/relr.config \
+    arch/arm64/configs/vendor/feature/vdso.config || {
+    send_telegram_error
+    exit 1
+}
+
+make O=out ARCH=arm64 olddefconfig || {
     send_telegram_error
     exit 1
 }
