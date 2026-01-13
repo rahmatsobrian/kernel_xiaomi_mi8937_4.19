@@ -7,7 +7,7 @@ yellow='\033[0;33m'
 white='\033[0m'
 
 # ================= PATH =================
-DEFCONFIG=vendor/msm8937-perf_defconfig
+DEFCONFIG=vendor/rahmatmi8937_defconfig
 ROOTDIR=$(pwd)
 OUTDIR="$ROOTDIR/out/arch/arm64/boot"
 ANYKERNEL_DIR="$ROOTDIR/AnyKernel"
@@ -147,45 +147,45 @@ make O=out ARCH=arm64 ${DEFCONFIG} || {
 echo -e "$yellow[+] Check root directory...$white"
 ls -a
 
-echo -e "$yellow[+] Merge kernel config...$white"
-$MERGE -m out/.config \
-$MI8937 \
-$LTO \
-$RELR \
-$VDSO \
-$THINLTO \
-$CFICLANG \
-$SHADOWCALL \
-$BPF \
-$IR || {
-    send_telegram_error
-    exit 1
-}
+# echo -e "$yellow[+] Merge kernel config...$white"
+# $MERGE -m out/.config \
+# $MI8937 \
+# $LTO \
+# $RELR \
+# $VDSO \
+# $THINLTO \
+# $CFICLANG \
+# $SHADOWCALL \
+# $BPF \
+# $IR || {
+#     send_telegram_error
+#     exit 1
+# }
 
-echo -e "$yellow[+] Check root directory...$white"
-ls -a
+# echo -e "$yellow[+] Check root directory...$white"
+# ls -a
 
-echo -e "$yellow[+] Build olddefconfig...$white"
+# echo -e "$yellow[+] Build olddefconfig...$white"
 # yes "" | make O=out ARCH=arm64 olddefconfig
-make O=out ARCH=arm64 olddefconfig || {
-    send_telegram_error
-    exit 1
-}
+# make O=out ARCH=arm64 olddefconfig || {
+#     send_telegram_error
+#     exit 1
+# }
 
-echo -e "$yellow[+] Check root directory...$white"
-ls -a
+# echo -e "$yellow[+] Check root directory...$white"
+# ls -a
 
 BUILD_START=$(TZ=Asia/Jakarta date +%s)
 
-echo "[+] Copy .config to out folder..."
-cp .config out/.config
+# echo "[+] Copy .config to out folder..."
+# cp .config out/.config
 
-echo "[+] Cleaning root tree..."
-rm -rf .config
-make mrproper
+# echo "[+] Cleaning root tree..."
+# rm -rf .config
+# make mrproper
 
-echo -e "$yellow[+] Check root directory after delete .config...$white"
-ls -a
+# echo -e "$yellow[+] Check root directory after delete .config...$white"
+# ls -a
 
 echo -e "$yellow[+] Check out directory before build...$white"
 ls -a out
